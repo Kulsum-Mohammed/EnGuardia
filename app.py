@@ -1,10 +1,13 @@
-import sys
-import subprocess
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-install("numpy>=1.26.0")
-install("pandas>=2.1.4")
+# MUST BE FIRST - Page Config
 import streamlit as st
+st.set_page_config(
+    page_title="EnGuardia NIDS",
+    page_icon="🛡️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Import other packages
 import pandas as pd
 import numpy as np
 import joblib
@@ -120,14 +123,6 @@ def set_custom_style():
 
 # Initialize custom style
 set_custom_style()
-
-# Page Config
-st.set_page_config(
-    page_title="EnGuardia NIDS",
-    page_icon="🛡️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Load Model
 @st.cache_resource
