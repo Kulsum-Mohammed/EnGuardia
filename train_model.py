@@ -2,24 +2,28 @@ import pandas as pd
 import numpy as np
 import joblib
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
+# Load and preprocess data
 def load_data():
-    columns = ["duration", "protocol_type", "service", "flag", "src_bytes", "dst_bytes", "land",
-               "wrong_fragment", "urgent", "hot", "num_failed_logins", "logged_in", "num_compromised",
-               "root_shell", "su_attempted", "num_root", "num_file_creations", "num_shells",
-               "num_access_files", "num_outbound_cmds", "is_host_login", "is_guest_login", "count",
-               "srv_count", "serror_rate", "srv_serror_rate", "rerror_rate", "srv_rerror_rate",
-               "same_srv_rate", "diff_srv_rate", "srv_diff_host_rate", "dst_host_count",
-               "dst_host_srv_count", "dst_host_same_srv_rate", "dst_host_diff_srv_rate",
-               "dst_host_same_src_port_rate", "dst_host_srv_diff_host_rate", "dst_host_serror_rate",
-               "dst_host_srv_serror_rate", "dst_host_rerror_rate", "dst_host_srv_rerror_rate",
+    columns = ["duration", "protocol_type", "service", "flag", "src_bytes", 
+               "dst_bytes", "land", "wrong_fragment", "urgent", "hot", 
+               "num_failed_logins", "logged_in", "num_compromised", 
+               "root_shell", "su_attempted", "num_root", "num_file_creations", 
+               "num_shells", "num_access_files", "num_outbound_cmds", 
+               "is_host_login", "is_guest_login", "count", "srv_count", 
+               "serror_rate", "srv_serror_rate", "rerror_rate", 
+               "srv_rerror_rate", "same_srv_rate", "diff_srv_rate", 
+               "srv_diff_host_rate", "dst_host_count", "dst_host_srv_count", 
+               "dst_host_same_srv_rate", "dst_host_diff_srv_rate", 
+               "dst_host_same_src_port_rate", "dst_host_srv_diff_host_rate", 
+               "dst_host_serror_rate", "dst_host_srv_serror_rate", 
+               "dst_host_rerror_rate", "dst_host_srv_rerror_rate", 
                "attack", "last_flag"]
     
-    train = pd.read_csv('Train.txt', sep=',', names=columns)
-    test = pd.read_csv('Test.txt', sep=',', names=columns)
+    train = pd.read_csv('data/Train.txt', sep=',', names=columns)
+    test = pd.read_csv('data/Test.txt', sep=',', names=columns)
     return train, test
 
 def preprocess_data(train, test):
@@ -44,33 +48,7 @@ def preprocess_data(train, test):
 
     train = map_attack_class(train)
     test = map_attack_class(test)
-    
     return train, test
-
-def feature_engineering(train_df, test_df):
-    cat_cols = ['protocol_type', 'service', 'flag']
-    ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-    ohe.fit(train_df[cat_cols])
-
-    def encode_data(df):
-        encoded = ohe.transform(df[cat_cols])
-        encoded_df = pd.DataFrame(encoded, columns=ohe.get_feature_names_out(), index=df.index)
-        return pd.concat([df.drop(cat_cols + ['attack'], axis=1), encoded_df], axis=1)
-
-    train_processed = encode_data(train_df)
-    test_processed = encode_data(test_df)
-
-    X_train = train_processed.drop('attack_class', axis=1)
-    y_train = train_processed['attack_class']
-    X_test = test_processed.drop('attack_class', axis=1)
-    y_test = test_processed['attack_class']
-
-    num_cols = X_train.select_dtypes(include=['int64','float64']).columns
-    scaler = StandardScaler()
-    X_train[num_cols] = scaler.fit_transform(X_train[num_cols])
-    X_test[num_cols] = scaler.transform(X_test[num_cols])
-
-    return X_train, y_train, X_test, y_test, ohe, scaler
 
 def train_and_save_model():
     print("Loading data...")
@@ -79,25 +57,32 @@ def train_and_save_model():
     print("Preprocessing data...")
     train, test = preprocess_data(train, test)
     
-    print("Feature engineering...")
-    X_train, y_train, X_test, y_test, ohe, scaler = feature_engineering(train, test)
+    print("Preparing features...")
+    cat_cols = ['protocol_type', 'service', 'flag']
+    ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+    ohe.fit(train[cat_cols])
+    
+    def encode_data(df):
+        encoded = ohe.transform(df[cat_cols])
+        encoded_df = pd.DataFrame(encoded, columns=ohe.get_feature_names_out())
+        return pd.concat([df.drop(cat_cols + ['attack'], axis=1), encoded_df], axis=1)
+    
+    train_processed = encode_data(train)
+    X_train = train_processed.drop('attack_class', axis=1)
+    y_train = train_processed['attack_class']
     
     print("Training model...")
     model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
     
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model accuracy: {accuracy:.2%}")
-    
     print("Saving model...")
     deployment_pkg = {
         'model': model,
-        'scaler': scaler,
+        'scaler': StandardScaler().fit(X_train.select_dtypes(include=['int64','float64'])),
         'encoder': ohe,
         'feature_names': X_train.columns.tolist(),
         'num_cols': [col for col in X_train.columns if X_train[col].dtype in ['int64','float64']],
-        'cat_cols': ['protocol_type', 'service', 'flag'],
+        'cat_cols': cat_cols,
         'attack_mapping': {
             0: 'normal',
             1: 'dos',
