@@ -1,3 +1,9 @@
+import sys
+import subprocess
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+install("numpy>=1.26.0")
+install("pandas>=2.1.4")
 import streamlit as st
 import pandas as pd
 import numpy as np
