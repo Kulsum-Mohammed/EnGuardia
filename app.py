@@ -131,6 +131,7 @@ def load_model():
         return joblib.load('enguardia_model.pkl')
     except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
+        st.info("Please train the model first by running 'python train_model.py'")
         return None
 
 # Prediction Function
