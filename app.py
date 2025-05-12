@@ -5,165 +5,181 @@ import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Set up custom UI theme
+# Custom Styling
 st.markdown("""
     <style>
-        body {
-            background-color: white;
-        }
-        .main {
-            background-color: white;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            color: #008FFF;
-        }
+        body, .main { background-color: #F8F9FA; }
+        h1, h2, h3, h4, h5, h6 { color: #0A66C2; }
         .stButton>button {
-            background-color: #6200EF;
+            background-color: #0066FF;
             color: white;
             border-radius: 10px;
-            height: 3em;
-            width: 100%;
+            padding: 0.5em 1em;
             font-weight: bold;
         }
         .stTextInput>div>div>input, .stNumberInput input {
-            border: 1px solid #A4C013;
+            border: 1px solid #198754;
             padding: 0.5em;
+            border-radius: 5px;
         }
         .stForm {
-            border: 1px solid #E7A930;
+            background-color: #FFFFFF;
+            padding: 2em;
             border-radius: 10px;
-            padding: 1em;
-        }
-        .stMarkdown {
-            color: #333333;
+            border: 1px solid #DEE2E6;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# Load ML components
+# Load components
 model = joblib.load('saved_models/nids_xgb_model.joblib')
 scaler = joblib.load('saved_models/nids_scaler.joblib')
-selector = joblib.load('saved_models/nids_feature_selector.joblib')
 label_encoder_y = joblib.load('saved_models/nids_label_encoder.joblib')
 label_encoders = joblib.load('saved_models/nids_input_encoders.joblib')
-selected_feature_names = joblib.load('saved_models/nids_selected_features.joblib')
+selected_features = joblib.load('saved_models/nids_selected_features.joblib')
+
+# Feature full names mapping
+feature_names = {
+    'dur': 'Duration',
+    'state': 'State',
+    'dpkts': 'Destination Packets',
+    'sbytes': 'Source Bytes',
+    'dbytes': 'Destination Bytes',
+    'rate': 'Packet Rate',
+    'sttl': 'Source TTL',
+    'dttl': 'Destination TTL',
+    'sload': 'Source Load',
+    'dload': 'Destination Load',
+    'dinpkt': 'Destination Interpacket Time',
+    'smean': 'Source Mean Packet Size',
+    'dmean': 'Destination Mean Packet Size',
+    'ct_state_ttl': 'Connection State/TTL',
+    'ct_srv_dst': 'Connections to Same Service' 
+}
 
 # Attack descriptions
-descriptions = {
+attack_details = {
     "Analysis": """
-1. Analysis Attack
-🔍 What it is: This involves probing a system to identify vulnerabilities or gather information.
-❓ Why it occurs: To prepare for more severe intrusions.
-⚙️ What causes it: Lack of proper firewall rules or IDS.
-🛡️ How to deal with it: Use up-to-date firewalls and anomaly-based IDS.
-☠️ Risks & Potential Damage: Data leakage and reconnaissance for major attacks.
+### 🕵️ Analysis Attack
+- **What it is**: Probing systems to discover vulnerabilities.
+- **Why it occurs**: To gather intel before launching deeper attacks.
+- **What causes it**: Inadequate firewall rules or IDS.
+- **How to deal with it**: Deploy anomaly-based IDS and traffic monitoring.
+- **Risks & Potential Damage**: System reconnaissance, intelligence leak.
 """,
     "Backdoor": """
-2. Backdoor Attack
-🔍 What it is: A method to bypass authentication to access a system secretly.
-❓ Why it occurs: Often installed by malware or insider threat.
-⚙️ What causes it: Insecure applications or poor patch management.
-🛡️ How to deal with it: Use endpoint protection and monitor traffic.
-☠️ Risks & Potential Damage: Total system compromise.
+### 🔓 Backdoor Attack
+- **What it is**: Hidden access points to bypass security controls.
+- **Why it occurs**: Often left by malware or insiders.
+- **What causes it**: Poorly secured applications.
+- **How to deal with it**: Endpoint monitoring and access audits.
+- **Risks & Potential Damage**: Unauthorized control, data breaches.
 """,
     "DoS": """
-3. DoS (Denial of Service) Attack
-🔍 What it is: Overwhelming a system with requests to make it unavailable.
-❓ Why it occurs: To disrupt services.
-⚙️ What causes it: Exploiting network or protocol weaknesses.
-🛡️ How to deal with it: Rate limiting, firewalls, and traffic analysis.
-☠️ Risks & Potential Damage: Downtime, revenue loss.
+### 🚫 Denial of Service (DoS)
+- **What it is**: Flooding services to make them unavailable.
+- **Why it occurs**: Disruption or extortion.
+- **What causes it**: Exploiting network weaknesses.
+- **How to deal with it**: Traffic filtering, rate-limiting.
+- **Risks & Potential Damage**: Service outage, financial loss.
 """,
     "Exploits": """
-4. Exploits
-🔍 What it is: Taking advantage of software vulnerabilities.
-❓ Why it occurs: To gain control or access data.
-⚙️ What causes it: Unpatched systems.
-🛡️ How to deal with it: Apply updates, use vulnerability scanners.
-☠️ Risks & Potential Damage: Full system takeover.
+### 🧨 Exploits
+- **What it is**: Use of software bugs to gain control.
+- **Why it occurs**: To escalate privileges or steal data.
+- **What causes it**: Unpatched vulnerabilities.
+- **How to deal with it**: Regular patching, code audits.
+- **Risks & Potential Damage**: System compromise.
 """,
     "Fuzzers": """
-5. Fuzzers
-🔍 What it is: Inputting random data to crash or expose bugs.
-❓ Why it occurs: Testing or malicious intent.
-⚙️ What causes it: No input validation.
-🛡️ How to deal with it: Sanitize inputs and monitor for unusual behavior.
-☠️ Risks & Potential Damage: Crashes, exposure of sensitive data.
+### 💥 Fuzzing Attack
+- **What it is**: Sending malformed data to crash systems.
+- **Why it occurs**: Bug discovery or sabotage.
+- **What causes it**: Lack of input validation.
+- **How to deal with it**: Sanitize inputs and use fuzz testing.
+- **Risks & Potential Damage**: System crashes, exposed flaws.
 """,
     "Generic": """
-6. Generic
-🔍 What it is: Common patterns or attacks not tied to a specific method.
-❓ Why it occurs: Often automated scans or bots.
-⚙️ What causes it: Lack of traffic filtering.
-🛡️ How to deal with it: Intrusion Prevention Systems (IPS).
-☠️ Risks & Potential Damage: System access or enumeration.
+### 📦 Generic Attack
+- **What it is**: General, non-categorized attack types.
+- **Why it occurs**: Automated scans or default exploits.
+- **What causes it**: Weak baseline defenses.
+- **How to deal with it**: Use firewalls, IP filtering.
+- **Risks & Potential Damage**: Unauthorized access or info leak.
 """,
-    "Normal": "This is normal traffic. No malicious activity detected.",
+    "Normal": """
+### ✅ Normal Traffic
+- No attack detected. Session looks safe.
+""",
     "Reconnaissance": """
-7. Reconnaissance
-🔍 What it is: Mapping out the network or gathering intel.
-❓ Why it occurs: To plan a more severe attack.
-⚙️ What causes it: Lack of detection rules.
-🛡️ How to deal with it: Use honeypots and alerting.
-☠️ Risks & Potential Damage: Full-blown attacks if unchecked.
+### 🔭 Reconnaissance
+- **What it is**: Info-gathering phase of an attack.
+- **Why it occurs**: To plan targeted exploitation.
+- **What causes it**: Insecure services or exposed ports.
+- **How to deal with it**: Use honeypots and strict access logs.
+- **Risks & Potential Damage**: Future targeted attacks.
 """,
     "Worms": """
-8. Worms
-🔍 What it is: Self-replicating malware spreading across systems.
-❓ Why it occurs: To infect and propagate automatically.
-⚙️ What causes it: Vulnerable network services.
-🛡️ How to deal with it: Patch regularly, monitor anomalies.
-☠️ Risks & Potential Damage: Widespread disruption.
+### 🐛 Worm Attack
+- **What it is**: Self-replicating malware that spreads.
+- **Why it occurs**: To infect and propagate automatically.
+- **What causes it**: Network service vulnerabilities.
+- **How to deal with it**: Apply patches, network segmentation.
+- **Risks & Potential Damage**: Widespread infection, data loss.
 """
 }
 
-# Title and instructions
+# App title
 st.title("🔐 EnGuardia - NIDS Attack Predictor")
-st.markdown("Input the network session features to predict the type of cyberattack.")
+st.markdown("Enter session features to detect the attack type.")
 
-# Input form
+# Form Input
 with st.form("attack_form"):
     user_input = {}
-    for feature in selected_feature_names:
+    for feature in selected_features:
+        label = feature_names.get(feature, feature)
         if feature in label_encoders:
-            user_input[feature] = st.text_input(f"{feature} (categorical)")
+            user_input[feature] = st.text_input(f"{label} (categorical)")
         else:
-            user_input[feature] = st.number_input(f"{feature} (numeric)", value=0.0)
+            user_input[feature] = st.number_input(f"{label} (numeric)", value=0.0)
+    submitted = st.form_submit_button("Predict Attack Type")
 
-    submitted = st.form_submit_button("Predict")
-
-# Prediction logic
+# Prediction and Results
 if submitted:
     try:
-        input_df = pd.DataFrame([user_input], columns=selected_feature_names)
+        input_df = pd.DataFrame([user_input])
 
         for col in label_encoders:
-            if col in input_df.columns:
-                input_df[col] = label_encoders[col].transform(input_df[col].astype(str))
+            input_df[col] = label_encoders[col].transform(input_df[col].astype(str))
 
         for col in input_df.columns:
             if col not in label_encoders:
                 input_df[col] = pd.to_numeric(input_df[col], errors='coerce')
 
         if input_df.isnull().any().any():
-            st.error("Invalid or missing input values.")
+            st.error("⚠️ Invalid or missing input values.")
         else:
-            input_scaled = scaler.transform(input_df)
-            prediction = model.predict(input_scaled)[0]
-            label = label_encoder_y.inverse_transform([prediction])[0]
+            scaled_input = scaler.transform(input_df)
+            pred = model.predict(scaled_input)[0]
+            label = label_encoder_y.inverse_transform([pred])[0]
 
-            st.success(f"🛡️ Predicted Attack Type: {label}")
-            st.markdown(descriptions.get(label, "No description available."))
+            st.success(f"🛡️ Predicted Attack Type: **{label}**")
+            st.markdown(attack_details.get(label, "No description available."))
 
+            # Visualization
             st.markdown("---")
-            st.subheader("📊 Feature Visualization")
-
+            st.subheader("📊 Input Feature Visualization")
             fig, ax = plt.subplots(figsize=(10, 5))
-            sns.barplot(x=list(user_input.keys()), y=list(user_input.values()), palette=['#008FFF']*len(user_input))
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
-            ax.set_title("Input Feature Values", color="#6200EF")
-            ax.tick_params(colors='#333333')
+            sns.barplot(
+                x=[feature_names.get(k, k) for k in user_input.keys()],
+                y=list(user_input.values()),
+                palette='coolwarm'
+            )
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+            ax.set_title("Session Input Features")
+            ax.set_ylabel("Value")
             st.pyplot(fig)
 
     except Exception as e:
         st.error(f"Error: {e}")
+
