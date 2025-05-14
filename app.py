@@ -19,14 +19,14 @@ st.markdown("""
     <style>
         body, .main {
             background-color: #262730;
-            color: #ffffff;
+            color: white;
         }
 
         h1, h2, h3 {
             color: #f63366;
         }
 
-        /* Input and dropdown field text color fix */
+        /* Input field appearance */
         input, select, textarea {
             color: white !important;
             background-color: #1e1f25 !important;
@@ -40,6 +40,11 @@ st.markdown("""
 
         .stSelectbox div[data-baseweb="select"] {
             background-color: #1e1f25 !important;
+            color: white !important;
+        }
+
+        /* Label text color */
+        label, .stTextInput label, .stNumberInput label, .stSelectbox label {
             color: white !important;
         }
 
