@@ -11,16 +11,15 @@ import os
 # Define selected features EnGuardia uses
 SELECTED_FEATURES = [
     'dur', 'state', 'dpkts', 'sbytes', 'dbytes', 'rate', 'sttl', 'dttl',
-    'sload', 'dload', 'dinpkt', 'smean', 'dmean', 'ct_state_ttl', 'ct_srv_dst'
+    'sload', 'dload', 'dinpkt', 'smean', 'dmean', 'ct_state_ttl', 'ct_srv_dst',
+    'ct_flw_http_mthd'
 ]
 
 SAVE_DIR = 'saved_models'
 
 def main():
     os.makedirs(SAVE_DIR, exist_ok=True)
-
     df = pd.read_csv('data/UNSW_NB15.csv')
-
     # Drop irrelevant columns
     df.drop(columns=[col for col in df.columns if 'id' in col.lower() or 'time' in col.lower()], 
             inplace=True, errors='ignore')
@@ -59,20 +58,20 @@ def main():
         max_depth=8,
         subsample=0.8,
         colsample_bytree=0.8,
-        objective='multi:softmax',
+        objective='multi:softprob',
         num_class=len(label_encoder_y.classes_),
         eval_metric='mlogloss',
         random_state=42
     )
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    y_pred_cv = cross_val_predict(model, X_scaled, y_resampled, cv=skf, method='predict')
+    print("\nCross-Validation Classification Report:")
+    print(classification_report(y_resampled, y_pred_cv, target_names=label_encoder_y.classes_))
+
     scores = cross_val_score(model, X_scaled, y_resampled, cv=skf, scoring='f1_weighted')
     print(f"\nCross-validated weighted F1 scores: {scores}")
     print(f"Mean F1-score: {scores.mean():.4f}")
-
-    y_pred_cv = cross_val_predict(model, X_scaled, y_resampled, cv=skf)
-    print("\nCross-Validation Classification Report:")
-    print(classification_report(y_resampled, y_pred_cv, target_names=label_encoder_y.classes_))
 
     model.fit(X_scaled, y_resampled)
 
@@ -85,11 +84,17 @@ def main():
     for i, label in enumerate(label_encoder_y.classes_):
         print(f"{i}: {label}")
 
+    if 'state' in label_encoders:
+        print("\nState encoding mapping:")
+        le_state = label_encoders['state']
+        for i, class_ in enumerate(le_state.classes_):
+            print(f"{i}: {class_}")
+
     print_sample_predictions()
 
 def print_sample_predictions():
     try:
-        df = pd.read_csv('data/UNSW_NB15.csv')
+        df = pd.read_csv('/content/UNSW_NB15.csv')
         df = df.replace('-', np.nan).dropna(subset=['service', 'attack_cat'])
 
         selected_features = joblib.load(f'{SAVE_DIR}/nids_selected_features.joblib')
@@ -113,13 +118,14 @@ def print_sample_predictions():
         for actual, feat_dict in samples.items():
             X_sample = pd.DataFrame([feat_dict])[selected_features]
             X_scaled = scaler.transform(X_sample)
-            pred_idx = model.predict(X_scaled)[0]
+            proba = model.predict_proba(X_scaled)[0]
+            pred_idx = np.argmax(proba)
             predicted = label_encoder.inverse_transform([pred_idx])[0]
-            print(f"Actual: {actual:15s} → Predicted: {predicted}")
+            confidence = proba[pred_idx]
+            print(f"Actual: {actual:15s} → Predicted: {predicted:15s} | Confidence: {confidence:.4f}")
 
     except Exception as e:
         print(f"Sample prediction failed: {e}")
 
 if __name__ == "__main__":
     main()
-
