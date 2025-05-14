@@ -1,11 +1,12 @@
-streamlit==1.35.0          # Latest as of May 2025, for the UI app
-pandas==2.2.2              # Stable and efficient for data handling
-numpy==1.26.4              # Core numerical processing
-scikit-learn==1.4.2        # For preprocessing, evaluation, model validation
-xgboost==2.0.3             # Fully compatible with sklearn API (no use_label_encoder warning)
-imbalanced-learn==0.12.2   # SMOTE for handling class imbalance
-joblib==1.4.2              # For saving/loading models and encoders
-matplotlib==3.8.4          # For plotting
-seaborn==0.13.2            # For clean, themed visualizations
+streamlit==1.35.0
+pandas==2.2.2
+numpy==1.26.4
+joblib==1.4.2
+scikit-learn==1.4.2
+matplotlib==3.8.4
+seaborn==0.13.2
+xgboost==2.0.3
+imbalanced-learn==0.12.2
+
 
 
