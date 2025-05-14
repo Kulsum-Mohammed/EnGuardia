@@ -17,27 +17,39 @@ state_options = list(state_encoder.classes_)
 # Custom CSS for styling
 st.markdown("""
     <style>
-        body {
-            background-color: #262730;
-        }
-        .main {
+        body, .main {
             background-color: #262730;
             color: #ffffff;
         }
+
         h1, h2, h3 {
             color: #f63366;
         }
-        .stTextInput > div > input {
-            background-color: #1e1f25;
-            color: #ffffff;
+
+        /* Input and dropdown field text color fix */
+        input, select, textarea {
+            color: white !important;
+            background-color: #1e1f25 !important;
+            border: 1px solid #444 !important;
         }
-        .stSelectbox > div {
-            background-color: #1e1f25;
-            color: #ffffff;
+
+        .stTextInput input, .stNumberInput input {
+            background-color: #1e1f25 !important;
+            color: white !important;
         }
+
+        .stSelectbox div[data-baseweb="select"] {
+            background-color: #1e1f25 !important;
+            color: white !important;
+        }
+
+        /* Button styling */
         .stButton>button {
             background-color: #f63366;
             color: white;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
         }
     </style>
 """, unsafe_allow_html=True)
