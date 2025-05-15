@@ -234,7 +234,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Title
-st.title(""🔐 EnGuardia – "Turning Packets into Patterns. Patterns into Protection."")
+st.title("🔐 EnGuardia – Turning Packets into Patterns. Patterns into Protection.")
+
 st.markdown("Input the session-level network features below to predict the cyberattack type:")
 
 # Input form
