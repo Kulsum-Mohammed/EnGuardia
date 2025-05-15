@@ -230,6 +230,11 @@ st.markdown("""
             border-radius: 0.5rem;
             padding: 0.5rem 1rem;
         }
+        .stNumberInput label, .stSelectbox label {
+            color: white;  /* Change to black for light theme */
+            font-weight: bold;
+            font-size: 16px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
