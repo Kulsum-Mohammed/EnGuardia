@@ -297,7 +297,6 @@ if submitted:
         # 🔎 Show attack info immediately
         st.markdown("## 🧠 Attack Insights")
         st.markdown(attack_info.get(predicted_class, "No description available."), unsafe_allow_html=True)
-
         # 📊 Visualizations
         st.subheader("📊 Visual Dashboard for Input Features")
 
@@ -309,16 +308,23 @@ if submitted:
         ax1.set_title("Feature Input Values")
         st.pyplot(fig1)
 
+        # Pie chart for byte distribution
+        fig2, ax2 = plt.subplots()
+        ax2.pie([sbytes, dbytes], labels=['Source Bytes', 'Destination Bytes'],
+                autopct='%1.1f%%', colors=['#38bdf8','#f59e0b'])
+        ax2.set_title("Traffic Direction Volume")
+        st.pyplot(fig2)
 
-
-        # Histogram
+        # Histogram for mean packet sizes
         fig3, ax3 = plt.subplots()
-        ax3.hist([smean, dmean], bins=10, color=['#10b981','#ef4444'], label=['Source Mean', 'Destination Mean'])
+        ax3.hist([[smean], [dmean]], bins=5, color=['#10b981','#ef4444'], label=['Source Mean', 'Destination Mean'])
         ax3.legend()
         ax3.set_title("Distribution of Mean Packet Sizes")
+        ax3.set_xlabel("Packet Size")
+        ax3.set_ylabel("Frequency")
         st.pyplot(fig3)
 
-        # Radar plot
+        # Radar plot for selected flow metrics
         radar_labels = ['rate', 'sload', 'dload', 'dinpkt']
         radar_values = [input_data[feat] for feat in radar_labels]
         radar_angles = np.linspace(0, 2*np.pi, len(radar_labels), endpoint=False).tolist()
@@ -326,12 +332,14 @@ if submitted:
         radar_angles += radar_angles[:1]
 
         fig4, ax4 = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-        ax4.plot(radar_angles, radar_values, 'o-', linewidth=2, label='Flow Metrics')
-        ax4.fill(radar_angles, radar_values, alpha=0.25)
+        ax4.plot(radar_angles, radar_values, 'o-', linewidth=2, label='Flow Metrics', color='#6366f1')
+        ax4.fill(radar_angles, radar_values, alpha=0.25, color='#6366f1')
         ax4.set_xticks(radar_angles[:-1])
         ax4.set_xticklabels(radar_labels)
         ax4.set_title("Flow Metrics Radar View")
         st.pyplot(fig4)
+
+
 
     except Exception as e:
         st.error(f"❌ Prediction failed: {e}")
