@@ -4,7 +4,6 @@ import numpy as np
 import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
-import seaborn.objects as so
 
 # Load models and encoders
 scaler = joblib.load('saved_models/nids_scaler.joblib')
@@ -17,7 +16,6 @@ selected_features = joblib.load('saved_models/nids_selected_features.joblib')
 state_encoder = input_encoders['state']
 state_options = list(state_encoder.classes_)
 
-# Detailed attack descriptions
 attack_info = {
     "Normal": """
     **Normal** traffic represents baseline, non-malicious activity in a network or system.  
@@ -208,42 +206,39 @@ attack_info = {
     """
 }
 
-# Updated visual style
+# 🎨 Custom cyber-themed styling
 st.markdown("""
     <style>
         body, .main {
-            background-color: #1c1e26;
-            color: #e0e0e0;
+            background-color: #0f172a;
+            color: #e2e8f0;
         }
-        h1, h2, h3 {
-            color: #fbbf24;
-        }
-        input, select, textarea {
-            background-color: #2a2d3e !important;
-            color: #ffffff !important;
-            border: 1px solid #4b5563 !important;
+        h1, h2, h3, .st-emotion-cache-10trblm, .st-emotion-cache-1v0mbdj {
+            color: #38bdf8;
         }
         .stButton>button {
-            background-color: #10b981;
-            color: white;
+            background-color: #38bdf8;
+            color: black;
             font-weight: bold;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            padding: 8px 16px;
         }
         .stNumberInput label, .stSelectbox label {
-            color: white;  /* Change to black for light theme */
+            color: #f8fafc;
             font-weight: bold;
-            font-size: 16px;
+        }
+        .stTextInput>div>div>input, .stSelectbox>div>div>select {
+            background-color: #1e293b;
+            color: #f8fafc;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# Title
+# 🚀 Title
 st.title("🔐 EnGuardia – Turning Packets into Patterns. Patterns into Protection.")
-
 st.markdown("Input the session-level network features below to predict the cyberattack type:")
 
-# Input form
+# 🧾 Input form
 with st.form("prediction_form"):
     col1, col2 = st.columns(2)
     with col1:
@@ -264,80 +259,85 @@ with st.form("prediction_form"):
         ct_state_ttl = st.number_input("Connection State/TTL", value=0.0)
         ct_srv_dst = st.number_input("Connections to Same Service", value=0.0)
         ct_flw_http_mthd = st.number_input("HTTP Method Count", value=0.0)
+
     submitted = st.form_submit_button("🔍 Predict Attack Type")
 
-    if submitted:
-        try:
-            input_data = {
-                'dur': dur,
-                'state': state_encoder.transform([state])[0],
-                'dpkts': dpkts,
-                'sbytes': sbytes,
-                'dbytes': dbytes,
-                'rate': rate,
-                'sttl': sttl,
-                'dttl': dttl,
-                'sload': sload,
-                'dload': dload,
-                'dinpkt': dinpkt,
-                'smean': smean,
-                'dmean': dmean,
-                'ct_state_ttl': ct_state_ttl,
-                'ct_srv_dst': ct_srv_dst,
-                'ct_flw_http_mthd': ct_flw_http_mthd
-            }
+if submitted:
+    try:
+        input_data = {
+            'dur': dur,
+            'state': state_encoder.transform([state])[0],
+            'dpkts': dpkts,
+            'sbytes': sbytes,
+            'dbytes': dbytes,
+            'rate': rate,
+            'sttl': sttl,
+            'dttl': dttl,
+            'sload': sload,
+            'dload': dload,
+            'dinpkt': dinpkt,
+            'smean': smean,
+            'dmean': dmean,
+            'ct_state_ttl': ct_state_ttl,
+            'ct_srv_dst': ct_srv_dst,
+            'ct_flw_http_mthd': ct_flw_http_mthd
+        }
 
-            X = pd.DataFrame([input_data])[selected_features]
-            X_scaled = scaler.transform(X)
+        X = pd.DataFrame([input_data])[selected_features]
+        X_scaled = scaler.transform(X)
 
-            proba = model.predict_proba(X_scaled)[0]
-            pred_idx = np.argmax(proba)
-            predicted_class = label_encoder.inverse_transform([pred_idx])[0]
-            confidence = proba[pred_idx]
+        proba = model.predict_proba(X_scaled)[0]
+        pred_idx = np.argmax(proba)
+        predicted_class = label_encoder.inverse_transform([pred_idx])[0]
+        confidence = proba[pred_idx]
 
-            st.success(f"🛡️ Predicted Attack Type: **{predicted_class}**")
-            st.info(f"Confidence: **{confidence:.2%}**")
+        st.success(f"🛡️ Predicted Attack Type: **{predicted_class}**")
+        st.info(f"Confidence: **{confidence:.2%}**")
 
-            if st.button("📖 About the Attack"):
-                st.markdown(attack_info.get(predicted_class, "No information available."))
+        # 🔎 Show attack info immediately
+        st.markdown("## 🧠 Attack Insights")
+        st.markdown(attack_info.get(predicted_class, "No description available."), unsafe_allow_html=True)
 
-            st.subheader("📊 Visual Dashboard for Input Features")
+        # 📊 Visualizations
+        st.subheader("📊 Visual Dashboard for Input Features")
 
-            # Barplot for feature values
-            fig1, ax1 = plt.subplots(figsize=(10, 4))
-            sns.barplot(x=list(X.columns), y=list(X.iloc[0]), palette="crest", ax=ax1)
-            ax1.set_xticklabels(ax1.get_xticklabels(), rotation=45, ha='right')
-            ax1.set_ylabel("Value")
-            ax1.set_title("Feature Input Values")
-            st.pyplot(fig1)
+        # Barplot
+        fig1, ax1 = plt.subplots(figsize=(10, 4))
+        sns.barplot(x=list(X.columns), y=list(X.iloc[0]), palette="crest", ax=ax1)
+        ax1.set_xticklabels(ax1.get_xticklabels(), rotation=45, ha='right')
+        ax1.set_ylabel("Value")
+        ax1.set_title("Feature Input Values")
+        st.pyplot(fig1)
 
-            # Pie chart: Source vs Destination bytes
-            fig2, ax2 = plt.subplots()
-            ax2.pie([sbytes, dbytes], labels=['Source Bytes', 'Destination Bytes'], autopct='%1.1f%%', colors=['#3b82f6','#f59e0b'])
-            ax2.set_title("Traffic Direction Volume")
-            st.pyplot(fig2)
+        # Pie chart
+        fig2, ax2 = plt.subplots()
+        ax2.pie([sbytes, dbytes], labels=['Source Bytes', 'Destination Bytes'],
+                autopct='%1.1f%%', colors=['#38bdf8','#f59e0b'])
+        ax2.set_title("Traffic Direction Volume")
+        st.pyplot(fig2)
 
-            # Histogram of packet sizes
-            fig3, ax3 = plt.subplots()
-            ax3.hist([smean, dmean], bins=10, color=['#10b981','#ef4444'], label=['Source Mean', 'Destination Mean'])
-            ax3.legend()
-            ax3.set_title("Distribution of Mean Packet Sizes")
-            st.pyplot(fig3)
+        # Histogram
+        fig3, ax3 = plt.subplots()
+        ax3.hist([smean, dmean], bins=10, color=['#10b981','#ef4444'], label=['Source Mean', 'Destination Mean'])
+        ax3.legend()
+        ax3.set_title("Distribution of Mean Packet Sizes")
+        st.pyplot(fig3)
 
-            # Radar-style plot (polar) for flow-related features
-            radar_labels = ['rate', 'sload', 'dload', 'dinpkt']
-            radar_values = [input_data[feat] for feat in radar_labels]
-            radar_angles = np.linspace(0, 2*np.pi, len(radar_labels), endpoint=False).tolist()
-            radar_values += radar_values[:1]
-            radar_angles += radar_angles[:1]
+        # Radar plot
+        radar_labels = ['rate', 'sload', 'dload', 'dinpkt']
+        radar_values = [input_data[feat] for feat in radar_labels]
+        radar_angles = np.linspace(0, 2*np.pi, len(radar_labels), endpoint=False).tolist()
+        radar_values += radar_values[:1]
+        radar_angles += radar_angles[:1]
 
-            fig4, ax4 = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-            ax4.plot(radar_angles, radar_values, 'o-', linewidth=2, label='Flow Metrics')
-            ax4.fill(radar_angles, radar_values, alpha=0.25)
-            ax4.set_xticks(radar_angles[:-1])
-            ax4.set_xticklabels(radar_labels)
-            ax4.set_title("Flow Metrics Radar View")
-            st.pyplot(fig4)
+        fig4, ax4 = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+        ax4.plot(radar_angles, radar_values, 'o-', linewidth=2, label='Flow Metrics')
+        ax4.fill(radar_angles, radar_values, alpha=0.25)
+        ax4.set_xticks(radar_angles[:-1])
+        ax4.set_xticklabels(radar_labels)
+        ax4.set_title("Flow Metrics Radar View")
+        st.pyplot(fig4)
 
-        except Exception as e:
-            st.error(f"❌ Prediction failed: {e}")
+    except Exception as e:
+        st.error(f"❌ Prediction failed: {e}")
+
