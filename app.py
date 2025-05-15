@@ -309,23 +309,6 @@ if submitted:
         ax1.set_title("Feature Input Values")
         st.pyplot(fig1)
 
-        # Pie chart
-# 📊 Pie Chart (Handles zero-value issues)
-pie_values = [sbytes, dbytes]
-pie_labels = ['Source Bytes', 'Destination Bytes']
-pie_colors = ['#38bdf8', '#f59e0b']
-
-# Filter out zero values to avoid pie color mismatch
-filtered = [(v, l, c) for v, l, c in zip(pie_values, pie_labels, pie_colors) if v > 0]
-
-if filtered:
-    values, labels, colors = zip(*filtered)
-    fig2, ax2 = plt.subplots()
-    ax2.pie(values, labels=labels, autopct='%1.1f%%', colors=colors)
-    ax2.set_title("Traffic Direction Volume")
-    st.pyplot(fig2)
-else:
-    st.warning("📉 Pie chart skipped: Source and Destination Bytes are both zero.")
 
 
         # Histogram
